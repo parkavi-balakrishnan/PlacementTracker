@@ -1,0 +1,56 @@
+/* GLOBAL RESET */
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f0c29; /* Deep Dark Blue */
+  background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+  color: white;
+  font-family: 'Inter', sans-serif;
+}
+
+/* INPUTS */
+input, select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  outline: none;
+  transition: 0.3s;
+}
+
+input:focus, select:focus {
+  border-color: #4facfe;
+  box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+}
+
+/* BUTTONS */
+button {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* GLASSMORPHISM CARDS */
+.job-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: 0.3s;
+}
+
+.job-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.01);
+}
+
+/* STATUS BADGES */
+.badge {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
