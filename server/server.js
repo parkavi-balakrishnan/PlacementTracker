@@ -1,34 +1,23 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
+const cors = require('cors'); // 👈 This is the key fixer
+require('dotenv').config();
 
 const app = express();
 
-// 1. Better CORS (Allows your frontend explicitly)
-app.use(cors({
-    origin: true, // This allows ANY frontend (5173, 5174, 5175...) to connect
-    credentials: true
-}));
-
+// 1. ALLOW EVERYONE (Fixes the connection error)
+app.use(cors()); 
 app.use(express.json());
 
-// 2. DEBUG LOGGER (Prints whenever a request hits the server)
-app.use((req, res, next) => {
-    console.log(`👉 HIT: ${req.method} ${req.url}`);
-    next();
-});
+// 2. Database Connection
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => console.log('❌ DB Error:', err));
 
-// Routes
-app.use('/api/tasks', require('./routes/tasks'));
+// 3. Define Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/jobs', require('./routes/jobs'));
-
-const DB_LINK = process.env.MONGO_URI; 
-
-mongoose.connect(DB_LINK)
-  .then(() => console.log('✅✅✅ MongoDB Connected Successfully! ✅✅✅'))
-  .catch((err) => console.error('❌ MongoDB Connection Failed:', err));
+app.use('/api/tasks', require('./routes/tasks'));
+app.use('/api/ai', require('./routes/ai')); // 👈 Ensures AI route is active
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server started on port ${PORT}`));

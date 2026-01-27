@@ -96,6 +96,9 @@ const Dashboard = () => {
                 <button onClick={logout} style={{ padding: '8px 20px', background: 'transparent', border: '1px solid #ff4b2b', color: '#ff4b2b', borderRadius: '5px', cursor: 'pointer' }}>
                     Logout
                 </button>
+                <button onClick={() => navigate('/ai-coach')} style={{ marginRight: '10px', padding: '8px 20px', background: 'linear-gradient(to right, #6a11cb, #2575fc)', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+    🤖 AI Coach
+</button>
             </div>
 
             {/* --- ANALYTICS SECTION --- */}

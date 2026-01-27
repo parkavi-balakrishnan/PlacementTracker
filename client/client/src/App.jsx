@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import Signup from './components/Signup';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import AiCoach from './components/AiCoach';
 
 // We create a separate component for the Navbar so it can use the "useLocation" hook
 const Navbar = () => {
@@ -38,6 +39,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/" element={<Login />} />
+            <Route path="/ai-coach" element={<AiCoach />} />
           </Routes>
         </div>
       </div>
