@@ -7,7 +7,7 @@ const app = express();
 
 // 1. Better CORS (Allows your frontend explicitly)
 app.use(cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: true, // This allows ANY frontend (5173, 5174, 5175...) to connect
     credentials: true
 }));
 
@@ -20,6 +20,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/jobs', require('./routes/jobs'));
 
