@@ -16,7 +16,7 @@ const Login = () => {
     const onSubmit = async e => {
         e.preventDefault();
         try {
-            const res = await axios.post('http://127.0.0.1:5001/api/auth/login', formData);
+            const res = await axios.post('http://localhost:5001/api/auth/login', formData);
             
             // Save the token in "Local Storage" (Browser Memory)
             localStorage.setItem('token', res.data.token);

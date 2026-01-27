@@ -16,7 +16,7 @@ const Signup = () => {
         e.preventDefault();
         try {
             // This connects to your BACKEND at port 5001
-            const res = await axios.post('http://127.0.0.1:5001/api/auth/register', formData);
+            const res = await axios.post('http://localhost:5001/api/auth/register', formData);
             alert('Registered Successfully! Token: ' + res.data.token);
         } catch (err) {
             console.error(err);
