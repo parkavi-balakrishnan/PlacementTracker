@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+// Removed useNavigate since Navbar handles navigation/logout now
 
 const Dashboard = () => {
-    const navigate = useNavigate();
     
-    // --- STATE ---
+    // --- STATE (Your existing logic) ---
     const [jobs, setJobs] = useState([]);
     const [tasks, setTasks] = useState([]);
     
@@ -21,31 +20,28 @@ const Dashboard = () => {
                 const config = { headers: { 'x-auth-token': token } };
 
                 // Get Jobs
-                const resJobs = await axios.get('/api/jobs', config);
+                const resJobs = await axios.get('http://localhost:5001/api/jobs', config);
                 setJobs(resJobs.data);
 
                 // Get Tasks
-                const resTasks = await axios.get('/api/tasks', config);
+                const resTasks = await axios.get('http://localhost:5001/api/tasks', config);
                 setTasks(resTasks.data);
             } catch (err) {
-                if (err.response && err.response.status === 401) logout();
+                console.error(err);
             }
         };
         fetchData();
     }, []);
 
     // --- ACTIONS ---
-    const logout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
-    };
+    // (Logout is now handled by Navbar, so we removed it from here)
 
     // Add Job
     const handleJobSubmit = async e => {
         e.preventDefault();
         const token = localStorage.getItem('token');
         const config = { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } };
-        const res = await axios.post('/api/jobs', jobForm, config);
+        const res = await axios.post('http://localhost:5001/api/jobs', jobForm, config);
         setJobs([res.data, ...jobs]);
         setJobForm({ company: '', position: '', status: 'Applied' });
     };
@@ -55,25 +51,24 @@ const Dashboard = () => {
         e.preventDefault();
         const token = localStorage.getItem('token');
         const config = { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } };
-        const res = await axios.post('/api/tasks', taskForm, config);
+        const res = await axios.post('http://localhost:5001/api/tasks', taskForm, config);
         setTasks([res.data, ...tasks]);
-        setTaskForm({ ...taskForm, taskName: '' }); // Keep category/topic, clear name
+        setTaskForm({ ...taskForm, taskName: '' }); 
     };
 
     // Toggle Task Completion
     const toggleTask = async (id) => {
         const token = localStorage.getItem('token');
         const config = { headers: { 'x-auth-token': token } };
-        const res = await axios.put(`/api/tasks/${id}`, {}, config);
+        await axios.put(`http://localhost:5001/api/tasks/${id}`, {}, config);
         
-        // Update UI locally
         setTasks(tasks.map(task => task._id === id ? { ...task, isCompleted: !task.isCompleted } : task));
     };
 
     // Delete Task
     const deleteTask = async (id) => {
         const token = localStorage.getItem('token');
-        await axios.delete(`/api/tasks/${id}`, { headers: { 'x-auth-token': token } });
+        await axios.delete(`http://localhost:5001/api/tasks/${id}`, { headers: { 'x-auth-token': token } });
         setTasks(tasks.filter(task => task._id !== id));
     };
 
@@ -86,71 +81,64 @@ const Dashboard = () => {
     };
 
     return (
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
             
-            {/* HEADER */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <h1 style={{ margin: 0, fontSize: '2.5rem', background: '-webkit-linear-gradient(45deg, #4facfe, #00f2fe)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    🚀 Placement Dashboard
+            {/* 1. NEW WELCOME SECTION */}
+            <div style={{ marginBottom: '40px' }}>
+                <h1 style={{ fontSize: '2.5rem', margin: '0 0 10px 0', color: 'var(--text-main)' }}>
+                    Welcome back, <span style={{ color: 'var(--primary)' }}>Future Engineer</span> 🚀
                 </h1>
-                <button onClick={logout} style={{ padding: '8px 20px', background: 'transparent', border: '1px solid #ff4b2b', color: '#ff4b2b', borderRadius: '5px', cursor: 'pointer' }}>
-                    Logout
-                </button>
-                <button onClick={() => navigate('/ai-coach')} style={{ marginRight: '10px', padding: '8px 20px', background: 'linear-gradient(to right, #6a11cb, #2575fc)', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-    🤖 AI Coach
-</button>
+                <p style={{ color: 'var(--text-secondary)' }}>Track your progress and crush your goals.</p>
             </div>
 
-            {/* --- ANALYTICS SECTION --- */}
+            {/* 2. STATS GRID (Using Glass Cards) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }}>
                 
-                {/* DSA Progress Card */}
-                <div className="job-card" style={{ padding: '20px' }}>
-                    <h3 style={{ marginTop: 0 }}>📘 DSA Progress</h3>
-                    <div style={{ background: 'rgba(255,255,255,0.1)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginTop: '10px' }}>
-                        <div style={{ width: `${calculateProgress('DSA')}%`, background: '#4facfe', height: '100%' }}></div>
+                {/* DSA Card */}
+                <div className="glass-card" style={{ padding: '25px' }}>
+                    <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-secondary)' }}>📘 DSA Progress</h3>
+                    <div style={{ background: 'var(--border)', height: '10px', borderRadius: '5px', overflow: 'hidden' }}>
+                        <div style={{ width: `${calculateProgress('DSA')}%`, background: 'var(--primary)', height: '100%' }}></div>
                     </div>
-                    <p style={{ textAlign: 'right', marginTop: '5px' }}>{calculateProgress('DSA')}% Completed</p>
+                    <p style={{ textAlign: 'right', marginTop: '10px', fontWeight: 'bold' }}>{calculateProgress('DSA')}% Done</p>
                 </div>
 
-                {/* Core Progress Card */}
-                <div className="job-card" style={{ padding: '20px' }}>
-                    <h3 style={{ marginTop: 0 }}>📗 Core Subjects</h3>
-                    <div style={{ background: 'rgba(255,255,255,0.1)', height: '10px', borderRadius: '5px', overflow: 'hidden', marginTop: '10px' }}>
-                        <div style={{ width: `${calculateProgress('Core')}%`, background: '#00f2fe', height: '100%' }}></div>
+                {/* Core Card */}
+                <div className="glass-card" style={{ padding: '25px' }}>
+                    <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-secondary)' }}>📗 Core Subjects</h3>
+                    <div style={{ background: 'var(--border)', height: '10px', borderRadius: '5px', overflow: 'hidden' }}>
+                        <div style={{ width: `${calculateProgress('Core')}%`, background: 'var(--accent)', height: '100%' }}></div>
                     </div>
-                    <p style={{ textAlign: 'right', marginTop: '5px' }}>{calculateProgress('Core')}% Completed</p>
+                    <p style={{ textAlign: 'right', marginTop: '10px', fontWeight: 'bold' }}>{calculateProgress('Core')}% Done</p>
                 </div>
 
-                {/* Stats Card */}
-                <div className="job-card" style={{ padding: '20px', textAlign: 'center' }}>
-                    <h3 style={{ marginTop: 0 }}>📊 Total Stats</h3>
-                    <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '15px' }}>
-                        <div>
-                            <h2 style={{ margin: 0, color: '#4facfe' }}>{tasks.filter(t => t.isCompleted).length}</h2>
-                            <span style={{ fontSize: '0.8rem', color: '#aaa' }}>Tasks Done</span>
-                        </div>
-                        <div>
-                            <h2 style={{ margin: 0, color: '#ff9f43' }}>{jobs.length}</h2>
-                            <span style={{ fontSize: '0.8rem', color: '#aaa' }}>Applications</span>
-                        </div>
+                {/* Total Stats Card */}
+                <div className="glass-card" style={{ padding: '25px', display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <h2 style={{ margin: 0, fontSize: '2rem', color: 'var(--primary)' }}>{tasks.filter(t => t.isCompleted).length}</h2>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Tasks</span>
+                    </div>
+                    <div style={{ width: '1px', height: '40px', background: 'var(--border)' }}></div>
+                    <div style={{ textAlign: 'center' }}>
+                        <h2 style={{ margin: 0, fontSize: '2rem', color: 'var(--accent)' }}>{jobs.length}</h2>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Jobs</span>
                     </div>
                 </div>
             </div>
 
-            {/* --- MAIN CONTENT GRID --- */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+            {/* 3. MAIN CONTENT (Tracker & Jobs) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '30px' }}>
 
                 {/* LEFT: PREPARATION TRACKER */}
-                <div>
-                    <h2 style={{ borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>📝 Study Tracker</h2>
+                <div className="glass-card" style={{ padding: '30px' }}>
+                    <h2 style={{ borderBottom: '1px solid var(--border)', paddingBottom: '15px', marginTop: 0, color: 'var(--text-main)' }}>📝 Study Tracker</h2>
                     
                     {/* Add Task Form */}
                     <form onSubmit={handleTaskSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                         <select 
                             value={taskForm.category} 
                             onChange={e => setTaskForm({...taskForm, category: e.target.value})}
-                            style={{ padding: '10px', background: '#24243e', color: 'white', border: 'none', borderRadius: '5px' }}
+                            style={{ padding: '12px', background: 'var(--input-bg)', color: 'var(--text-main)', border: '1px solid var(--border)', borderRadius: '8px' }}
                         >
                             <option value="DSA">DSA</option>
                             <option value="Core">Core</option>
@@ -158,11 +146,11 @@ const Dashboard = () => {
                         </select>
                         <input 
                             type="text" 
-                            placeholder="Topic (e.g. Arrays)" 
+                            placeholder="Topic" 
                             value={taskForm.topic}
                             onChange={e => setTaskForm({...taskForm, topic: e.target.value})}
                             required
-                            style={{ flex: 1, padding: '10px', background: '#24243e', border: 'none', color: 'white', borderRadius: '5px' }}
+                            style={{ flex: 1, padding: '12px', background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '8px' }}
                         />
                         <input 
                             type="text" 
@@ -170,53 +158,72 @@ const Dashboard = () => {
                             value={taskForm.taskName}
                             onChange={e => setTaskForm({...taskForm, taskName: e.target.value})}
                             required
-                            style={{ flex: 2, padding: '10px', background: '#24243e', border: 'none', color: 'white', borderRadius: '5px' }}
+                            style={{ flex: 2, padding: '12px', background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '8px' }}
                         />
-                        <button type="submit" style={{ padding: '10px', background: '#4facfe', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>+</button>
+                        <button type="submit" className="neon-button" style={{ padding: '0 20px' }}>+</button>
                     </form>
 
                     {/* Task List */}
-                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
                         {tasks.map(task => (
-                            <div key={task._id} className="job-card" style={{ display: 'flex', alignItems: 'center', padding: '15px', marginBottom: '10px', opacity: task.isCompleted ? 0.6 : 1 }}>
+                            <div key={task._id} style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                padding: '15px', 
+                                marginBottom: '10px', 
+                                background: 'var(--bg-main)', // Contrast against glass card
+                                borderRadius: '10px',
+                                border: '1px solid var(--border)',
+                                opacity: task.isCompleted ? 0.6 : 1 
+                            }}>
                                 <input 
                                     type="checkbox" 
                                     checked={task.isCompleted} 
                                     onChange={() => toggleTask(task._id)}
-                                    style={{ marginRight: '15px', transform: 'scale(1.5)', cursor: 'pointer' }} 
+                                    style={{ marginRight: '15px', width: '18px', height: '18px', cursor: 'pointer' }} 
                                 />
                                 <div style={{ flex: 1 }}>
-                                    <h4 style={{ margin: 0, textDecoration: task.isCompleted ? 'line-through' : 'none' }}>{task.taskName}</h4>
-                                    <span style={{ fontSize: '0.8rem', color: '#4facfe' }}>{task.category} • {task.topic}</span>
+                                    <h4 style={{ margin: 0, textDecoration: task.isCompleted ? 'line-through' : 'none', color: 'var(--text-main)' }}>{task.taskName}</h4>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>{task.category} • {task.topic}</span>
                                 </div>
-                                <button onClick={() => deleteTask(task._id)} style={{ background: 'transparent', border: 'none', color: '#ff4b2b', cursor: 'pointer' }}>✖</button>
+                                <button onClick={() => deleteTask(task._id)} style={{ background: 'transparent', border: 'none', color: '#ff4b2b', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* RIGHT: JOB APPLICATIONS (Existing Feature) */}
-                <div>
-                    <h2 style={{ borderBottom: '2px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>💼 Job Applications</h2>
+                {/* RIGHT: JOB APPLICATIONS */}
+                <div className="glass-card" style={{ padding: '30px' }}>
+                    <h2 style={{ borderBottom: '1px solid var(--border)', paddingBottom: '15px', marginTop: 0, color: 'var(--text-main)' }}>💼 Job Applications</h2>
                     
                     {/* Add Job Form */}
                     <form onSubmit={handleJobSubmit} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                        <input type="text" placeholder="Company" value={jobForm.company} onChange={e => setJobForm({...jobForm, company: e.target.value})} required style={{ flex: 1, padding: '10px', background: '#24243e', border: 'none', color: 'white', borderRadius: '5px' }} />
-                        <input type="text" placeholder="Role" value={jobForm.position} onChange={e => setJobForm({...jobForm, position: e.target.value})} required style={{ flex: 1, padding: '10px', background: '#24243e', border: 'none', color: 'white', borderRadius: '5px' }} />
-                        <button type="submit" style={{ padding: '10px', background: '#00f2fe', color: '#000', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Add</button>
+                        <input type="text" placeholder="Company" value={jobForm.company} onChange={e => setJobForm({...jobForm, company: e.target.value})} required style={{ flex: 1, padding: '12px', background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '8px' }} />
+                        <input type="text" placeholder="Role" value={jobForm.position} onChange={e => setJobForm({...jobForm, position: e.target.value})} required style={{ flex: 1, padding: '12px', background: 'var(--input-bg)', border: '1px solid var(--border)', color: 'var(--text-main)', borderRadius: '8px' }} />
+                        <button type="submit" className="neon-button" style={{ padding: '0 25px' }}>Add</button>
                     </form>
 
                     {/* Job List */}
-                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
                         {jobs.map(job => (
-                            <div key={job._id} className="job-card" style={{ padding: '15px', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                            <div key={job._id} style={{ 
+                                padding: '15px', 
+                                marginBottom: '10px', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                background: 'var(--bg-main)', // Contrast
+                                borderRadius: '10px',
+                                border: '1px solid var(--border)'
+                            }}>
                                 <div>
-                                    <h4 style={{ margin: 0 }}>{job.company}</h4>
-                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#aaa' }}>{job.position}</p>
+                                    <h4 style={{ margin: 0, color: 'var(--text-main)' }}>{job.company}</h4>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{job.position}</p>
                                 </div>
-                                <span className="badge" style={{ 
-                                    fontSize: '0.7rem', padding: '5px 10px', borderRadius: '10px',
-                                    background: job.status === 'Offer' ? '#2ecc71' : '#f1c40f', color: '#000'
+                                <span style={{ 
+                                    fontSize: '0.75rem', padding: '5px 12px', borderRadius: '20px', fontWeight: 'bold',
+                                    background: job.status === 'Offer' ? '#10b981' : 'var(--bg-card)', 
+                                    border: '1px solid var(--border)',
+                                    color: job.status === 'Offer' ? 'white' : 'var(--text-secondary)'
                                 }}>
                                     {job.status}
                                 </span>
