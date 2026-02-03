@@ -1,55 +1,123 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const axios = require('axios');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+require('dotenv').config();
 
-// 👇 PASTE YOUR KEY HERE 👇
-const API_KEY = "AIzaSyDS2xzjFWxKthqDBAspXABVkK_3jeP9oFU"; 
+// Configure Multer to store file in memory (RAM) temporarily
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Only PDF files are allowed!'), false);
+        }
+    }
+});
 
-router.post('/plan', auth, async (req, res) => {
-    const { targetCompany, resumeText, type } = req.body;
+const API_KEY = process.env.GEMINI_API_KEY;
+
+// Handle file upload errors
+router.post('/plan', auth, (req, res, next) => {
+    upload.single('resume')(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ result: "File too large. Maximum size is 5MB." });
+            }
+            return res.status(400).json({ result: "File upload error: " + err.message });
+        } else if (err) {
+            return res.status(400).json({ result: err.message });
+        }
+        next();
+    });
+}, async (req, res) => {
+    const { targetCompany, type, resumeText: textResume } = req.body;
     
-    console.log("🤖 AI Request Received...");
+    // We try to get text from EITHER a file OR a text input
+    let resumeText = textResume || "";
 
-    // 1. Construct the Prompt
-    let userPrompt = "";
-    if (type === 'plan') {
-        userPrompt = `Create a strict, week-by-week interview preparation plan for ${targetCompany}. Focus on DSA and Core subjects. Keep it concise.`;
-    } else {
-        userPrompt = `Review this resume and give 3 bullet points to fix: "${resumeText}".`;
+    console.log("🤖 AI Request Type:", type);
+
+    // --- 1. PDF Text Extraction ---
+    if (req.file) {
+        try {
+            console.log("📄 Processing PDF file...");
+            const pdfData = await pdfParse(req.file.buffer);
+            resumeText = pdfData.text.trim(); // We extracted the text!
+            console.log("✅ PDF Parsed. Text length:", resumeText.length);
+            
+            if (!resumeText || resumeText.length === 0) {
+                return res.status(400).json({ result: "Could not extract text from PDF. The PDF might be image-based or empty." });
+            }
+        } catch (error) {
+            console.error("❌ PDF Parse Error:", error);
+            return res.status(500).json({ result: "Failed to read PDF file: " + error.message });
+        }
     }
 
-    // 2. The URL - We switched to "gemini-flash-latest" (The Free/Stable Version)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${API_KEY}`;
+    // --- 2. Validation ---
+    if (!API_KEY) {
+        return res.status(500).json({ result: "Server Error: API Key missing." });
+    }
+    
+    if (type === 'plan' && !targetCompany) {
+        return res.status(400).json({ result: "Please provide a target company." });
+    }
+    
+    // If no text found from file OR input
+    if (type === 'resume' && !resumeText) {
+        return res.status(400).json({ result: "Please upload a PDF resume or paste resume text." });
+    }
+
+    // --- 3. Build Prompt ---
+    let userPrompt = "";
+    if (type === 'plan') {
+        userPrompt = `Create a strict, week-by-week interview preparation plan for ${targetCompany}. Focus on DSA and Core subjects.`;
+    } else {
+        // We limit the text to 10,000 characters to avoid hitting limits
+        const cleanResume = resumeText.substring(0, 10000); 
+        userPrompt = `Review this resume and give 3 specific, actionable bullet points to fix (Focus on formatting, keywords, and impact). Here is the resume text: \n\n"${cleanResume}"`;
+    }
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        console.log(`🌐 Connecting to Gemini 1.5 Flash...`);
+
+        // --- 4. Call Google API (Gemini 1.5 Flash) ---
+        const response = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+            {
                 contents: [{ parts: [{ text: userPrompt }] }]
-            })
-        });
+            },
+            {
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
 
-        const data = await response.json();
-
-        // Check for specific error messages from Google
-        if (data.error) {
-            console.error("❌ Google API Error:", data.error.message);
-            return res.status(500).json({ result: "AI Busy: " + data.error.message });
-        }
-
-        // Success!
-        if (data.candidates && data.candidates.length > 0) {
-            const aiText = data.candidates[0].content.parts[0].text;
-            console.log("✅ AI Responded Successfully!");
+        const aiText = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (aiText) {
+            console.log("✅ AI Response Success!");
             res.json({ result: aiText });
         } else {
-            res.json({ result: "No response from AI." });
+            console.warn("⚠️ AI responded but content was empty.");
+            res.status(500).json({ result: "AI response was empty." });
         }
 
     } catch (err) {
-        console.error("❌ Network Error:", err.message);
-        res.status(500).send('Server Error');
+        console.error("❌ AI Error Details:");
+        if (err.response) {
+            console.error(JSON.stringify(err.response.data, null, 2));
+            if (err.response.status === 404) {
+                return res.status(500).json({ result: "Model not found. Try updating the model name in ai.js." });
+            }
+        } else {
+            console.error(err.message);
+        }
+        res.status(500).json({ result: "AI Service Error. Check server logs for details." });
     }
 });
 

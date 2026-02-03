@@ -11,20 +11,41 @@ const AiCoach = () => {
     const [activeTab, setActiveTab] = useState('plan');
 
     const generateResponse = async () => {
-        if(!company && !resume) return;
+        // Validate input based on active tab
+        if (activeTab === 'plan' && !company.trim()) {
+            setResponse('⚠️ Please enter a target company name.');
+            return;
+        }
+        if (activeTab === 'resume' && !resume.trim()) {
+            setResponse('⚠️ Please paste your resume text.');
+            return;
+        }
+
         setLoading(true);
         setResponse('');
         
         try {
             const token = localStorage.getItem('token');
+            if (!token) {
+                setResponse('⚠️ Please login first.');
+                setLoading(false);
+                return;
+            }
+
             const config = { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } };
             const body = { type: activeTab, targetCompany: company, resumeText: resume };
 
             const res = await axios.post('http://localhost:5001/api/ai/plan', body, config);
-            setResponse(res.data.result.replace(/\*/g, '')); 
+            
+            if (res.data && res.data.result) {
+                setResponse(res.data.result.replace(/\*/g, '')); 
+            } else {
+                setResponse('⚠️ Unexpected response from server.');
+            }
         } catch (err) {
-            console.error(err);
-            setResponse('⚠️ AI is taking a nap. Check the console.');
+            console.error('AI Error:', err);
+            const errorMessage = err.response?.data?.result || err.response?.data?.msg || err.message || 'AI service is currently unavailable. Please try again later.';
+            setResponse(`⚠️ ${errorMessage}`);
         }
         setLoading(false);
     };

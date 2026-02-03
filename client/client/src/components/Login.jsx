@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import AuthContext from '../context/AuthContext';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -8,6 +9,7 @@ const Login = () => {
         password: ''
     });
     const navigate = useNavigate();
+    const { login } = useContext(AuthContext);
 
     const { email, password } = formData;
 
@@ -18,8 +20,8 @@ const Login = () => {
         try {
             const res = await axios.post('http://localhost:5001/api/auth/login', formData);
             
-            // Save the token in "Local Storage" (Browser Memory)
-            localStorage.setItem('token', res.data.token);
+            // Use AuthContext login function
+            login(res.data.token);
             
             //alert('Login Successful!');
             // Ideally, we would redirect to a Dashboard here

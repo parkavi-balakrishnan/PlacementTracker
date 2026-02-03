@@ -6,7 +6,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
 import AiCoach from './components/AiCoach';
-
+import AI from './AI';
 function App() {
   return (
     <AuthProvider>
@@ -28,6 +28,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/" element={<Login />} />
               <Route path="/ai-coach" element={<AiCoach />} />
+              <Route path="/ai" element={<AI />} />
             </Routes>
           </div>
         </div>

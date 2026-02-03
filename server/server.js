@@ -16,6 +16,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // 3. Define Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/ai', require('./routes/ai')); // 👈 Ensures AI route is active
 
