@@ -20,7 +20,7 @@ const Signup = () => {
         e.preventDefault();
         try {
             // This connects to your BACKEND at port 5001
-            const res = await axios.post('http://localhost:5001/api/auth/register', formData);
+            const res = await axios.post('https://placementtracker-rkl9.onrender.com/api/auth/register', formData);
             
             // Use AuthContext login function
             login(res.data.token);

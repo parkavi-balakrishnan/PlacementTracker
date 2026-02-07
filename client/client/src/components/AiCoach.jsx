@@ -35,7 +35,7 @@ const AiCoach = () => {
             const config = { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } };
             const body = { type: activeTab, targetCompany: company, resumeText: resume };
 
-            const res = await axios.post('http://localhost:5001/api/ai/plan', body, config);
+            const res = await axios.post('https://placementtracker-rkl9.onrender.com/api/ai/plan', body, config);
             
             if (res.data && res.data.result) {
                 setResponse(res.data.result.replace(/\*/g, '')); 
